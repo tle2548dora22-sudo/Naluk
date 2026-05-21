@@ -1,0 +1,12 @@
+# robots.txt — ASL Detector Web App
+# Place this file at the root of your static hosting (e.g. public/ or dist/)
+
+User-agent: *
+Allow: /
+
+# Disallow private/admin paths (if any exist in future)
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap location — update YOUR_DOMAIN before deploying
+Sitemap: https://YOUR_DOMAIN/sitemap.xml

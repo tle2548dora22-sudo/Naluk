@@ -1,0 +1,42 @@
+// ════════════════════════════════════════════════════════
+//  firestore.rules — ASL Detector Security Rules
+//  วางไฟล์นี้ที่รากโปรเจกต์ Firebase แล้ว deploy ด้วย:
+//    firebase deploy --only firestore:rules
+// ════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── users/{uid} ────────────────────────────────────
+    // อ่านได้เฉพาะเจ้าของ, แก้ไขได้เฉพาะเจ้าของ (แต่ห้ามแก้ role)
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // สมัครสมาชิก: สร้างได้เฉพาะครั้งแรก (ยังไม่มี document)
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.role == "user"
+                    && request.resource.data.email is string;
+
+      // อัปเดต: ห้ามเปลี่ยน role (admin ต้องแก้ผ่าน Firebase Console เท่านั้น)
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
+
+      allow delete: if false; // ห้ามลบ document
+    }
+
+    // ─── rate_limits/{uid} ───────────────────────────────
+    // ใช้เก็บ timestamp การเรียก API ล่าสุดเพื่อทำ client-side rate-limit check
+    // (Firebase rules ไม่รองรับ true server-side rate-limit โดยตรง)
+    match /rate_limits/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ─── Block ทุกอย่างที่ไม่ได้ระบุ ─────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
